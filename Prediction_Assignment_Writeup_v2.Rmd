@@ -53,7 +53,7 @@ rm(train_no_class,correlated_cols_to_exclude)
 ```
 
 ##Partition
-Training Data was split into 70% training and 30% testing so that I can test my model for accuracy.
+Training Data was split into 70% training and 30% testing so that I can test my model for accuracy (Out of sample error and cross-validation)
 
 ```{r partition}
 partition = createDataPartition(train$classe, p=0.7, list=F)
@@ -73,7 +73,7 @@ classeFit$finalModel
 ```
 
 ##Prediction
-I tested the fitness model function classeFit on the probe dataset as such. Then, I generated the confusion matrix for that prediction to evaluate the misclassification or out-of-sample error.  
+I tested the fitness model function classeFit on the probe dataset. Then, I generated the confusion matrix for that prediction to evaluate the misclassification or out-of-sample error.  
 
 As it can be seen, the fitness model only misclassified the below mentioned number of observations in this prediction test on the probe dataset.
 
