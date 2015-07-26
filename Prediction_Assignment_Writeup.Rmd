@@ -1,0 +1,105 @@
+---
+title: "Predictive Modeling - Human Activity Recognition"
+author: "Srikanth"
+date: "Sunday, July 26, 2015"
+output: html_document
+---
+##Background
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+##Goal
+The goal of your project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You may use any of the other variables to predict with. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases. 
+
+##Data input
+CSV files (both testing and training) were read with the _read.csv_ function where both blank spaces and NA entries were considered as NA.
+
+```{r Data input}
+library(caret)
+setwd("C:/Users/ABC/datasciencecoursera/PML")
+train<-read.csv(file = "pml-training.csv",header = T,sep = ","
+                ,na.strings=c("","NA"))
+test<-read.csv(file = "pml-testing.csv",header = T,sep = ","
+               ,na.strings=c("","NA"))
+
+```
+
+##Preprocess
+Missing values' columns were removed where the missing percentage was greatr than 95%. The first 7 columns were also removed since they were onlyindex to identify the records. These operations were performed on both test and train data.
+
+```{r process}
+missing<-c()
+rem<-c()
+for(i in 1:length(colnames(train))){
+    missing[i]<-sum(is.na(train[,i]))
+if(missing[i]/length(train[,i])>0.95){
+    rem<-rbind(rem,i)
+}}
+train<-train[,-c(1:7,rem)]
+test<-test[,-c(1:7,rem)]
+rm(i,missing,rem)
+
+```
+
+##Correlation
+Correlated variables affect the model and lead to wrong numbers hence they were identified (>75%) and removed.
+
+```{r correlated}
+train_no_class <- train[-c(dim(train))]
+correlated_cols_to_exclude <- findCorrelation(cor(train_no_class), cutoff= 0.75)
+train <- train[-c(correlated_cols_to_exclude)]
+test<- test[-c(correlated_cols_to_exclude)]
+rm(train_no_class,correlated_cols_to_exclude)
+
+```
+
+##Partition
+Training Data was split into 70% training and 30% testing so that I can test my model for accuracy.
+
+```{r partition}
+partition = createDataPartition(train$classe, p=0.7, list=F)
+training <- train[partition,]
+probe <- train[-partition,]
+rm(partition)
+rm(train)
+
+```
+
+##Model
+
+```{r model, cache=TRUE}
+classeFit <- train(training$classe ~., data=training, method="rf",prox=TRUE)
+classeFit$finalModel
+
+```
+
+##Prediction
+I tested the fitness model function classeFit on the probe dataset as such. Then, I generated the confusion matrix for that prediction to evaluate the misclassification or out-of-sample error.  
+
+As it can be seen, the fitness model only misclassified the below mentioned number of observations in this prediction test on the probe dataset.
+
+```{r prediction}
+pred <- predict(classeFit,probe)
+probe$predRight <- pred == probe$classe
+table(pred,probe$classe)
+
+```
+
+##Result
+After applying the fitness model function to the testing dataset pml-testing.csv (after filtering and preprocessing) the following predictions were obtained for the 20 test cases:
+
+```{r write, cache=TRUE}
+predOnTest <- predict(classeFit,test)
+predOnTest
+
+pml_write_files = function(x){
+    n = length(x)
+    for(i in 1:n){
+        filename = paste0("answers//problem_id_",i,".txt")
+        write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+    }
+}
+pml_write_files(predOnTest)
+
+```
+
+Thank you.
